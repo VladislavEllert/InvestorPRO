@@ -4,11 +4,28 @@ struct TradesView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var store: PortfolioStore
 
+    @State private var accountFilter: String?
+    @State private var typeFilter: OperationType?
+
     private var operations: [Operation] { store.portfolio?.operations ?? [] }
+
+    private var accountsList: [String] { Array(Set(operations.map(\.accountLabel))).sorted() }
+    private var typesList: [OperationType] {
+        Array(Set(operations.map(\.type))).sorted { $0.title < $1.title }
+    }
+
+    private var filtered: [Operation] {
+        operations.filter {
+            (accountFilter == nil || $0.accountLabel == accountFilter) &&
+            (typeFilter == nil || $0.type == typeFilter)
+        }
+    }
+
+    private var hasFilter: Bool { accountFilter != nil || typeFilter != nil }
 
     private var grouped: [(day: Date, items: [Operation])] {
         let calendar = Calendar.current
-        let dict = Dictionary(grouping: operations) { calendar.startOfDay(for: $0.date) }
+        let dict = Dictionary(grouping: filtered) { calendar.startOfDay(for: $0.date) }
         return dict.keys.sorted(by: >).map { ($0, dict[$0]!.sorted { $0.date > $1.date }) }
     }
 
@@ -29,12 +46,32 @@ struct TradesView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("История сделок")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Аккаунт", selection: $accountFilter) {
+                        Text("Все аккаунты").tag(String?.none)
+                        ForEach(accountsList, id: \.self) { Text($0).tag(Optional($0)) }
+                    }
+                    Picker("Тип", selection: $typeFilter) {
+                        Text("Все типы").tag(OperationType?.none)
+                        ForEach(typesList, id: \.self) { Text($0.title).tag(Optional($0)) }
+                    }
+                } label: {
+                    Image(systemName: hasFilter ? "line.3.horizontal.decrease.circle.fill"
+                                                 : "line.3.horizontal.decrease.circle")
+                }
+                .disabled(operations.isEmpty)
+            }
+        }
         .overlay {
-            if operations.isEmpty {
+            if filtered.isEmpty {
                 ContentUnavailableView(
-                    "Нет операций",
+                    operations.isEmpty ? "Нет операций" : "Ничего не найдено",
                     systemImage: "list.bullet.rectangle",
-                    description: Text("Подключите аккаунт и обновите портфель на главной.")
+                    description: Text(operations.isEmpty
+                        ? "Подключите аккаунт и обновите портфель на главной."
+                        : "Измените фильтр.")
                 )
             }
         }
