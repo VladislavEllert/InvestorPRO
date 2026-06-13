@@ -13,3 +13,10 @@ final class PortfolioSnapshot {
         self.totalRub = totalRub
     }
 }
+
+/// A plain (date, value) point for the charts series.
+struct PortfolioValuePoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let value: Double
+}

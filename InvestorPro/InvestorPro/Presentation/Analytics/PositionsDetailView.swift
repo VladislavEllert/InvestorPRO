@@ -94,7 +94,7 @@ private struct PositionRow: View {
 }
 
 #Preview {
-    NavigationStack { PositionsDetailView(positions: SampleData.positions) }
+    NavigationStack { PositionsDetailView(positions: []) }
         .environmentObject(AppSettings())
         .environmentObject(PortfolioStore())
 }

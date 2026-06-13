@@ -4,12 +4,7 @@ struct TradesView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var store: PortfolioStore
 
-    private var operations: [Operation] {
-        if let portfolio = store.portfolio, !portfolio.operations.isEmpty {
-            return portfolio.operations
-        }
-        return SampleData.operations
-    }
+    private var operations: [Operation] { store.portfolio?.operations ?? [] }
 
     private var grouped: [(day: Date, items: [Operation])] {
         let calendar = Calendar.current
@@ -30,7 +25,11 @@ struct TradesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay {
             if operations.isEmpty {
-                ContentUnavailableView("Нет операций", systemImage: "list.bullet.rectangle")
+                ContentUnavailableView(
+                    "Нет операций",
+                    systemImage: "list.bullet.rectangle",
+                    description: Text("Подключите аккаунт и обновите портфель на главной.")
+                )
             }
         }
     }

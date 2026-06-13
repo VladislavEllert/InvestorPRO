@@ -7,23 +7,33 @@ struct AnalyticsView: View {
 
     private var converter: CurrencyConverter { CurrencyConverter(usdRubRate: store.usdRubRate) }
 
-    private var breakdown: PortfolioBreakdown {
-        if let portfolio = store.portfolio, !portfolio.isEmpty {
-            return portfolio.breakdown(dimension)
-        }
-        return SampleData.breakdown(for: dimension)
+    private var breakdown: PortfolioBreakdown? {
+        guard let portfolio = store.portfolio, !portfolio.isEmpty else { return nil }
+        return portfolio.breakdown(dimension)
     }
 
+    private var detailPositions: [Position] { store.portfolio?.positions ?? [] }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                dimensionPicker
-                donut
-                legend
-                detailButton
+        Group {
+            if let breakdown {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        dimensionPicker
+                        donut(breakdown)
+                        legend(breakdown)
+                        detailButton
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                }
+            } else {
+                ContentUnavailableView(
+                    "Нет данных",
+                    systemImage: "chart.pie",
+                    description: Text("Подключите аккаунт и обновите портфель на главной.")
+                )
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Аналитика")
@@ -43,7 +53,7 @@ struct AnalyticsView: View {
         }
     }
 
-    private var donut: some View {
+    private func donut(_ breakdown: PortfolioBreakdown) -> some View {
         let total = converter.display(breakdown.total, in: settings.baseCurrency)
         let count = breakdown.items.count
         return DonutChartView(
@@ -53,29 +63,7 @@ struct AnalyticsView: View {
         )
     }
 
-    private var detailPositions: [Position] {
-        if let portfolio = store.portfolio, !portfolio.positions.isEmpty { return portfolio.positions }
-        return SampleData.positions
-    }
-
-    private var detailButton: some View {
-        NavigationLink {
-            PositionsDetailView(positions: detailPositions)
-        } label: {
-            HStack {
-                Label("Подробнее по активам", systemImage: "list.bullet.indent")
-                Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var legend: some View {
+    private func legend(_ breakdown: PortfolioBreakdown) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(breakdown.sorted.enumerated()), id: \.element.id) { index, item in
                 LegendRow(
@@ -83,14 +71,32 @@ struct AnalyticsView: View {
                     name: item.name,
                     percent: MoneyFormatter.percent(breakdown.share(of: item))
                 )
-                if index < breakdown.items.count - 1 {
-                    Divider()
-                }
+                if index < breakdown.items.count - 1 { Divider() }
             }
         }
         .padding(.horizontal, 16)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    @ViewBuilder
+    private var detailButton: some View {
+        if !detailPositions.isEmpty {
+            NavigationLink {
+                PositionsDetailView(positions: detailPositions)
+            } label: {
+                HStack {
+                    Label("Подробнее по активам", systemImage: "list.bullet.indent")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
@@ -114,13 +120,5 @@ struct SegmentPill: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-    }
-}
-
-#Preview {
-    NavigationStack {
-        AnalyticsView()
-            .environmentObject(AppSettings())
-            .environmentObject(PortfolioStore())
     }
 }

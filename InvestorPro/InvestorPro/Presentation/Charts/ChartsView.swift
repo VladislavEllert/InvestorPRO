@@ -67,15 +67,25 @@ struct ChartsView: View {
     private var converter: CurrencyConverter { CurrencyConverter(usdRubRate: store.usdRubRate) }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                periodPicker
-                styleAndChart
-                movementStats
+        Group {
+            if hasPortfolio {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        header
+                        periodPicker
+                        styleAndChart
+                        movementStats
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                }
+            } else {
+                ContentUnavailableView(
+                    "Нет данных",
+                    systemImage: "chart.bar",
+                    description: Text("Подключите аккаунт и обновите портфель на главной.")
+                )
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Графики")
@@ -84,22 +94,19 @@ struct ChartsView: View {
 
     // MARK: Data
 
+    private var hasPortfolio: Bool {
+        if let portfolio = store.portfolio { return !portfolio.isEmpty }
+        return false
+    }
+
     /// Current portfolio total — the same for every period.
-    private var currentTotalRub: Double { store.portfolio?.totalRub ?? SampleData.total }
+    private var currentTotalRub: Double { store.portfolio?.totalRub ?? 0 }
 
-    /// True once a real portfolio is connected (vs. the onboarding demo).
-    private var isLive: Bool { store.hasData }
-
-    /// Value series in RUB. For a live portfolio we use ONLY recorded snapshots —
-    /// never fabricated history. With no accounts we show the labelled demo series.
+    /// Value series in RUB — ONLY recorded snapshots. Never fabricated.
     private var fullSeriesRub: [PortfolioValuePoint] {
-        if snapshots.count >= 2 {
-            return snapshots.map { PortfolioValuePoint(date: $0.date, value: $0.totalRub) }
-        }
-        if isLive { return [] }                       // real account, not enough history yet
-        let raw = SampleData.fullHistory()            // demo only (no accounts)
-        let offset = currentTotalRub - (raw.last?.value ?? currentTotalRub)
-        return raw.map { PortfolioValuePoint(date: $0.date, value: $0.value + offset) }
+        snapshots.count >= 2
+            ? snapshots.map { PortfolioValuePoint(date: $0.date, value: $0.totalRub) }
+            : []
     }
 
     /// Enough points in the current window to draw a chart and period stats.
@@ -115,10 +122,7 @@ struct ChartsView: View {
 
     // MARK: Period profitability (one value, shared by header + stats)
 
-    private var operations: [Operation] {
-        if isLive { return store.portfolio?.operations ?? [] }
-        return SampleData.operations
-    }
+    private var operations: [Operation] { store.portfolio?.operations ?? [] }
 
     private var windowOps: [Operation] {
         let cutoff = period.cutoff ?? .distantPast

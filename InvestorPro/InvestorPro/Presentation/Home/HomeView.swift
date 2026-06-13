@@ -10,26 +10,27 @@ struct HomeView: View {
 
     private var converter: CurrencyConverter { CurrencyConverter(usdRubRate: store.usdRubRate) }
 
-    /// Live assets breakdown when available, otherwise sample data.
-    private var breakdown: PortfolioBreakdown {
-        if let portfolio = store.portfolio, !portfolio.isEmpty {
-            return portfolio.breakdown(.assets)
-        }
-        return SampleData.breakdown(for: .assets)
+    private var hasData: Bool {
+        if let portfolio = store.portfolio { return !portfolio.isEmpty }
+        return false
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    currencyToggle
-                    if !store.hasData { demoBanner }
-                    donutCard
-                    legend
-                    tiles
+                    if hasData {
+                        currencyToggle
+                        let breakdown = store.portfolio!.breakdown(.assets)
+                        donutCard(breakdown)
+                        legend(breakdown)
+                        tiles
+                    } else {
+                        emptyState
+                    }
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 24)
+                .padding(.vertical, 24)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Портфель")
@@ -39,7 +40,7 @@ struct HomeView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        Task { await store.refresh(accounts: accounts, context: modelContext)}
+                        Task { await store.refresh(accounts: accounts, context: modelContext) }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -57,12 +58,50 @@ struct HomeView: View {
         }
     }
 
-    /// Auto-refresh on foreground when the configured interval has elapsed.
     private func autoRefreshIfNeeded() async {
         guard let interval = settings.refreshInterval.seconds, !accounts.isEmpty else { return }
         if let last = store.lastUpdated, Date().timeIntervalSince(last) < interval { return }
         await store.refresh(accounts: accounts, context: modelContext)
     }
+
+    // MARK: Empty states (no fabricated data — show nothing until real data is pulled)
+
+    @ViewBuilder
+    private var emptyState: some View {
+        if accounts.isEmpty {
+            VStack(spacing: 16) {
+                ContentUnavailableView(
+                    "Нет аккаунтов",
+                    systemImage: "person.badge.key",
+                    description: Text("Добавьте аккаунт по API-токену в настройках, чтобы увидеть свой портфель.")
+                )
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Label("Открыть настройки", systemImage: "gearshape")
+                        .padding(.horizontal, 20).padding(.vertical, 12)
+                        .background(Palette.accent.opacity(0.18))
+                        .clipShape(Capsule())
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 420)
+        } else if store.isLoading {
+            VStack(spacing: 12) {
+                ProgressView()
+                Text("Загружаем портфель…").foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 420)
+        } else {
+            ContentUnavailableView {
+                Label("Нет данных", systemImage: "arrow.clockwise")
+            } description: {
+                Text(store.errorText ?? "Потяните вниз, чтобы обновить портфель.")
+            }
+            .frame(maxWidth: .infinity, minHeight: 420)
+        }
+    }
+
+    // MARK: Content
 
     private var currencyToggle: some View {
         Picker("Валюта", selection: $settings.baseCurrency) {
@@ -73,18 +112,7 @@ struct HomeView: View {
         .pickerStyle(.segmented)
     }
 
-    private var demoBanner: some View {
-        Label("Демо-данные. Добавьте аккаунт в Настройках, чтобы видеть свой портфель.",
-              systemImage: "info.circle")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var donutCard: some View {
+    private func donutCard(_ breakdown: PortfolioBreakdown) -> some View {
         let total = converter.display(breakdown.total, in: settings.baseCurrency)
         let count = breakdown.items.count
         return DonutChartView(
@@ -95,7 +123,7 @@ struct HomeView: View {
         .padding(.vertical, 8)
     }
 
-    private var legend: some View {
+    private func legend(_ breakdown: PortfolioBreakdown) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(breakdown.sorted.enumerated()), id: \.element.id) { index, item in
                 LegendRow(
@@ -151,11 +179,4 @@ private struct NavigationTile<Destination: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
-}
-
-#Preview {
-    HomeView()
-        .environmentObject(AppSettings())
-        .environmentObject(PortfolioStore())
-        .modelContainer(for: AccountConfig.self, inMemory: true)
 }
