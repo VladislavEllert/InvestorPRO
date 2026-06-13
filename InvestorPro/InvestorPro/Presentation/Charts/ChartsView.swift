@@ -87,15 +87,23 @@ struct ChartsView: View {
     /// Current portfolio total — the same for every period.
     private var currentTotalRub: Double { store.portfolio?.totalRub ?? SampleData.total }
 
-    /// One continuous value series in RUB (real snapshots, else sample anchored to the current total).
+    /// True once a real portfolio is connected (vs. the onboarding demo).
+    private var isLive: Bool { store.hasData }
+
+    /// Value series in RUB. For a live portfolio we use ONLY recorded snapshots —
+    /// never fabricated history. With no accounts we show the labelled demo series.
     private var fullSeriesRub: [PortfolioValuePoint] {
         if snapshots.count >= 2 {
             return snapshots.map { PortfolioValuePoint(date: $0.date, value: $0.totalRub) }
         }
-        let raw = SampleData.fullHistory()
+        if isLive { return [] }                       // real account, not enough history yet
+        let raw = SampleData.fullHistory()            // demo only (no accounts)
         let offset = currentTotalRub - (raw.last?.value ?? currentTotalRub)
         return raw.map { PortfolioValuePoint(date: $0.date, value: $0.value + offset) }
     }
+
+    /// Enough points in the current window to draw a chart and period stats.
+    private var hasChartData: Bool { buckets.count >= 2 }
 
     private var windowedRub: [PortfolioValuePoint] {
         guard let cutoff = period.cutoff else { return fullSeriesRub }
@@ -108,7 +116,7 @@ struct ChartsView: View {
     // MARK: Period profitability (one value, shared by header + stats)
 
     private var operations: [Operation] {
-        if let portfolio = store.portfolio, !portfolio.operations.isEmpty { return portfolio.operations }
+        if isLive { return store.portfolio?.operations ?? [] }
         return SampleData.operations
     }
 
@@ -178,14 +186,18 @@ struct ChartsView: View {
                 if let sel = selectedBucket {
                     Text(sel.date.formatted(.dateTime.day().month().year()))
                         .foregroundStyle(.secondary)
-                } else {
+                } else if hasChartData {
                     Text("\(sign)\(MoneyFormatter.string(abs(profit), currency: settings.baseCurrency))")
+                        .foregroundStyle(color)
                     Text("(\(MoneyFormatter.percent(abs(pct))))")
+                        .foregroundStyle(color)
                     Text("· за \(period.title.lowercased())").foregroundStyle(.secondary)
+                } else {
+                    Text("История копится с каждым обновлением")
+                        .foregroundStyle(.secondary)
                 }
             }
             .font(.subheadline)
-            .foregroundStyle(selectedBucket == nil ? color : .secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 8)
@@ -198,18 +210,41 @@ struct ChartsView: View {
         .pickerStyle(.segmented)
     }
 
+    @ViewBuilder
     private var styleAndChart: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Spacer()
-                Picker("Вид", selection: $style) {
-                    ForEach(ChartStyle.allCases) { Image(systemName: $0.systemImage).tag($0) }
+        if hasChartData {
+            VStack(spacing: 8) {
+                HStack {
+                    Spacer()
+                    Picker("Вид", selection: $style) {
+                        ForEach(ChartStyle.allCases) { Image(systemName: $0.systemImage).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 96)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 96)
+                chartCard
             }
-            chartCard
+        } else {
+            emptyChart
         }
+    }
+
+    private var emptyChart: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "chart.xyaxis.line")
+                .font(.system(size: 38))
+                .foregroundStyle(.secondary)
+            Text("Недостаточно истории")
+                .font(.headline)
+            Text("График стоимости строится по реальным снимкам портфеля. Они копятся при каждом обновлении — вернись позже.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 220)
+        .padding(24)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: Chart
@@ -319,7 +354,11 @@ struct ChartsView: View {
             }
             .padding(.bottom, 8)
 
-            statRow("Доходность", value: stats.profitability, signed: true)
+            if hasChartData {
+                statRow("Доходность", value: stats.profitability, signed: true)
+            } else {
+                dashRow("Доходность")
+            }
             Divider()
             statRow("Дивиденды", value: stats.dividends)
             Divider()
@@ -333,6 +372,15 @@ struct ChartsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func dashRow(_ title: String) -> some View {
+        HStack {
+            Text(title).foregroundStyle(.secondary)
+            Spacer()
+            Text("—").foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 12)
     }
 
     private func statRow(_ title: String, value: Double, signed: Bool = false) -> some View {

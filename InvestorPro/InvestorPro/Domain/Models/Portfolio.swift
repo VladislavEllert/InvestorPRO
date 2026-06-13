@@ -28,9 +28,12 @@ struct Portfolio {
                              coupons: coupons, turnover: turnover, deposits: deposits)
     }
 
-    /// Build a breakdown along one analytics dimension.
+    /// Build a breakdown along one analytics dimension. The total always equals the
+    /// broker's net portfolio value (`totalRub`): the difference between that and the
+    /// summed positions is added as a "Денежные средства" item — positive for free
+    /// cash, negative for margin debt — so the slices reconcile to the real total.
     func breakdown(_ dimension: AnalyticsDimension) -> PortfolioBreakdown {
-        let groups: [String: Double]
+        var groups: [String: Double]
         switch dimension {
         case .assets:
             groups = group { $0.assetClass.title }
@@ -41,6 +44,13 @@ struct Portfolio {
         case .currencies:
             groups = group { $0.currency.uppercased() }
         }
+
+        let positionsSum = positions.reduce(0) { $0 + $1.valueRub }
+        let residual = totalRub - positionsSum
+        if abs(residual) > 0.5 {
+            groups["Денежные средства", default: 0] += residual
+        }
+
         let items = groups.map { BreakdownItem(name: $0.key, amount: $0.value) }
         return PortfolioBreakdown(items: items)
     }
