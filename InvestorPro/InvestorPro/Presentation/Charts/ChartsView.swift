@@ -102,11 +102,9 @@ struct ChartsView: View {
     /// Current portfolio total — the same for every period.
     private var currentTotalRub: Double { store.portfolio?.totalRub ?? 0 }
 
-    /// Value series in RUB — ONLY recorded snapshots. Never fabricated.
+    /// Value series in RUB — ONLY recorded snapshots (even a single one). Never fabricated.
     private var fullSeriesRub: [PortfolioValuePoint] {
-        snapshots.count >= 2
-            ? snapshots.map { PortfolioValuePoint(date: $0.date, value: $0.totalRub) }
-            : []
+        snapshots.map { PortfolioValuePoint(date: $0.date, value: $0.totalRub) }
     }
 
     /// At least one snapshot → we can draw (a single column). Builds up over time.
