@@ -47,6 +47,8 @@ struct LegendRow: View {
     let name: String
     let percent: String
 
+    private var isNegative: Bool { percent.hasPrefix("-") || percent.hasPrefix("−") }
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
@@ -57,7 +59,7 @@ struct LegendRow: View {
             Spacer(minLength: 12)
             Text(percent)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(isNegative ? Palette.negative : .primary)
         }
         .padding(.vertical, 8)
     }

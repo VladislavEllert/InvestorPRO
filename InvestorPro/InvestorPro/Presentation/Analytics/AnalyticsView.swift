@@ -20,6 +20,7 @@ struct AnalyticsView: View {
                 dimensionPicker
                 donut
                 legend
+                detailButton
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
@@ -50,6 +51,28 @@ struct AnalyticsView: View {
             centerTitle: MoneyFormatter.string(total, currency: settings.baseCurrency),
             centerSubtitle: "\(count) \(dimension.countWord(count))"
         )
+    }
+
+    private var detailPositions: [Position] {
+        if let portfolio = store.portfolio, !portfolio.positions.isEmpty { return portfolio.positions }
+        return SampleData.positions
+    }
+
+    private var detailButton: some View {
+        NavigationLink {
+            PositionsDetailView(positions: detailPositions)
+        } label: {
+            HStack {
+                Label("Подробнее по активам", systemImage: "list.bullet.indent")
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
     }
 
     private var legend: some View {

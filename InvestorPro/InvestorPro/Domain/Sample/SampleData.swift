@@ -4,7 +4,7 @@ import Foundation
 /// (plan step 3). Numbers mirror the T-Bank reference screenshots. Delete once
 /// PortfolioAggregator feeds real data.
 enum SampleData {
-    static let total: Double = 180_836
+    static let total: Double = 170_853
 
     static func breakdown(for dimension: AnalyticsDimension) -> PortfolioBreakdown {
         switch dimension {
@@ -14,6 +14,7 @@ enum SampleData {
                 BreakdownItem(name: "Облигации", amount: 26_492),
                 BreakdownItem(name: "Фонды", amount: 9_385),
                 BreakdownItem(name: "Валюта и Металлы", amount: 217),
+                BreakdownItem(name: "Рубли (маржа)", amount: -10_000),
             ])
         case .companies:
             return PortfolioBreakdown(items: [
@@ -58,6 +59,19 @@ enum SampleData {
             points.append(PortfolioValuePoint(date: date, value: max(value, 10_000)))
         }
         return points
+    }
+
+    /// Sample positions for the "Подробнее" detail before live data lands.
+    static var positions: [Position] {
+        [
+            Position(id: "yndx", ticker: "YDEX", name: "Яндекс", assetClass: .share, quantity: 6, currentPrice: 4024, averagePrice: 4304, valueRub: 24_144, expectedYieldRub: -1_680, pnlPercent: -6.5, currency: "rub", sector: "it", issuer: "Яндекс"),
+            Position(id: "tcsg", ticker: "T", name: "Т-Технологии", assetClass: .share, quantity: 8, currentPrice: 3001, averagePrice: 3316, valueRub: 24_010, expectedYieldRub: -2_520, pnlPercent: -9.5, currency: "rub", sector: "financial", issuer: "Т-Технологии"),
+            Position(id: "sber", ticker: "SBERP", name: "Сбербанк-п", assetClass: .share, quantity: 75, currentPrice: 305.7, averagePrice: 287.6, valueRub: 22_927, expectedYieldRub: 1_360, pnlPercent: 6.3, currency: "rub", sector: "financial", issuer: "СберБанк"),
+            Position(id: "ofz47", ticker: "SU26247", name: "ОФЗ 26247", assetClass: .bond, quantity: 60, currentPrice: 956.8, averagePrice: 962.6, valueRub: 57_411, expectedYieldRub: -348, pnlPercent: -0.6, currency: "rub", sector: "government", issuer: "ОФЗ"),
+            Position(id: "vim", ticker: "LQDT", name: "ВИМ Ликвидность", assetClass: .etf, quantity: 160, currentPrice: 157, averagePrice: 120.7, valueRub: 25_126, expectedYieldRub: 5_810, pnlPercent: 30.1, currency: "rub", sector: nil, issuer: "ВИМ"),
+            Position(id: "eth", ticker: "ETH", name: "ETH", assetClass: .crypto, quantity: 0.05, currentPrice: 256_780, averagePrice: 0, valueRub: 12_839, expectedYieldRub: 0, pnlPercent: 0, currency: "USDT", sector: nil, issuer: "ETH"),
+            Position(id: "rub", ticker: "RUB", name: "Российский рубль", assetClass: .currency, quantity: -10_000, currentPrice: 1, averagePrice: 1, valueRub: -10_000, expectedYieldRub: 0, pnlPercent: 0, currency: "rub", sector: nil, issuer: "Рубль"),
+        ]
     }
 
     /// Sample operations for the trade-history screen before live data lands.

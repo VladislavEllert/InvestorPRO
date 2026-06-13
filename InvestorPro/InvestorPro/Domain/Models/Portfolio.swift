@@ -46,11 +46,13 @@ struct Portfolio {
     }
 
     private func group(by key: (Position) -> String) -> [String: Double] {
+        // Include negative positions (margin debt / negative cash) — they net the total
+        // down, exactly like the Telegram bot's structure view.
         var result: [String: Double] = [:]
-        for position in positions where position.valueRub > 0 {
+        for position in positions {
             result[key(position), default: 0] += position.valueRub
         }
-        return result
+        return result.filter { abs($0.value) > 0.5 }
     }
 }
 
