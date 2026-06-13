@@ -113,6 +113,9 @@ struct ChartsView: View {
     private var hasReturn: Bool { buckets.count >= 2 }
     /// A line needs two points; with a single point fall back to a column.
     private var effectiveStyle: ChartStyle { buckets.count < 2 ? .columns : style }
+    /// Only enable horizontal scrolling when there are enough points to overflow;
+    /// otherwise let the chart auto-fit so the axis dates sit under the bars.
+    private var isScrollable: Bool { buckets.count > 10 }
 
     private var windowedRub: [PortfolioValuePoint] {
         guard let cutoff = period.cutoff else { return fullSeriesRub }
@@ -309,7 +312,7 @@ struct ChartsView: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: .stride(by: period == .month ? .weekOfYear : .month)) { _ in
+            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
                 AxisGridLine()
                 AxisValueLabel(
                     format: period == .month
@@ -319,10 +322,12 @@ struct ChartsView: View {
                 .font(.caption2)
             }
         }
-        .chartScrollableAxes(.horizontal)
-        .chartXVisibleDomain(length: period.visibleSeconds)
-        .chartScrollPosition(x: $scrollX)
         .chartXSelection(value: $selectedDate)
+        .applyIf(isScrollable) {
+            $0.chartScrollableAxes(.horizontal)
+                .chartXVisibleDomain(length: period.visibleSeconds)
+                .chartScrollPosition(x: $scrollX)
+        }
         .frame(height: 260)
         .padding(.init(top: 12, leading: 8, bottom: 8, trailing: 12))
         .background(Color(.secondarySystemGroupedBackground))
@@ -414,4 +419,11 @@ struct ChartsView: View {
             .environmentObject(PortfolioStore())
     }
     .modelContainer(for: PortfolioSnapshot.self, inMemory: true)
+}
+
+private extension View {
+    @ViewBuilder
+    func applyIf<T: View>(_ condition: Bool, _ transform: (Self) -> T) -> some View {
+        if condition { transform(self) } else { self }
+    }
 }
