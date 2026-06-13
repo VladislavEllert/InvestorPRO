@@ -19,6 +19,15 @@ struct Position: Identifiable, Hashable {
     /// Optional analytics metadata (filled from instrument cache).
     var sector: String?
     var issuer: String?
+    /// T-Invest brand logo file name (e.g. "yandex.png"), for the CDN logo.
+    var logoName: String?
+
+    /// Official instrument logo from the T-Invest brand CDN.
+    var logoURL: URL? {
+        guard let name = logoName, !name.isEmpty else { return nil }
+        let base = name.replacingOccurrences(of: ".png", with: "")
+        return URL(string: "https://invest-brands.cdn-tinkoff.ru/\(base)x160.png")
+    }
 }
 
 /// Portfolio of one configured account (may sum several broker sub-accounts).

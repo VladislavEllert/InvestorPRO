@@ -50,26 +50,25 @@ private struct PositionRow: View {
     let currency: Currency
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(position.name).font(.body.weight(.medium))
-                Spacer(minLength: 8)
+        HStack(spacing: 12) {
+            InstrumentLogo(url: position.logoURL,
+                           fallbackText: position.ticker.isEmpty ? position.name : position.ticker)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(position.name).font(.body.weight(.medium)).lineLimit(1)
+                Text("\(qtyString) шт · \(price(position.averagePrice))")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 2) {
                 Text(MoneyFormatter.string(converter.display(position.valueRub, in: currency), currency: currency))
                     .font(.body.weight(.semibold))
                     .foregroundStyle(position.valueRub >= 0 ? .primary : Palette.negative)
-            }
-            HStack {
-                Text("\(position.ticker) · \(qtyString) шт.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Spacer(minLength: 8)
                 if position.pnlPercent != 0 || position.expectedYieldRub != 0 {
                     Text(pnlString)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(position.expectedYieldRub >= 0 ? Palette.positive : Palette.negative)
                 }
             }
-            Text("Цена \(price(position.currentPrice)) · средняя \(price(position.averagePrice))")
-                .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
     }
@@ -81,11 +80,10 @@ private struct PositionRow: View {
     }
 
     private var pnlString: String {
-        let pctSign = position.pnlPercent >= 0 ? "+" : "−"
-        let pct = String(format: "%.1f%%", abs(position.pnlPercent)).replacingOccurrences(of: ".", with: ",")
         let yieldSign = position.expectedYieldRub >= 0 ? "+" : "−"
         let yield = MoneyFormatter.string(abs(position.expectedYieldRub), currency: .rub)
-        return "\(pctSign)\(pct)  \(yieldSign)\(yield)"
+        let pct = String(format: "%.1f%%", abs(position.pnlPercent)).replacingOccurrences(of: ".", with: ",")
+        return "\(yieldSign)\(yield) · \(pct)"
     }
 
     private func price(_ value: Double) -> String {

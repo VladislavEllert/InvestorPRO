@@ -40,11 +40,13 @@ struct TInvestClient {
         let positions: [PortfolioPosition]?
     }
 
+    struct Brand: Decodable { let logoName: String? }
     struct Instrument: Decodable {
         let ticker: String?
         let name: String?
         let sector: String?
         let currency: String?
+        let brand: Brand?
     }
     private struct InstrumentResponse: Decodable { let instrument: Instrument? }
 

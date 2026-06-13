@@ -113,20 +113,23 @@ struct TInvestProvider: BrokerProvider {
             pnlPercent: pnlPct,
             currency: priceCurrency,
             sector: meta.sector,
-            issuer: meta.name
+            issuer: meta.name,
+            logoName: meta.logoName
         )
     }
 
-    /// Cache-first instrument metadata lookup; fetches + records only on a miss.
+    /// Cache-first instrument metadata lookup; fetches + records on a miss (or when a
+    /// cached entry predates logo support and has no logo yet).
     private func resolveMeta(figi: String, client: TInvestClient) async -> InstrumentMetaValue {
-        if let cached = metaCache[figi] { return cached }
+        if let cached = metaCache[figi], !cached.logoName.isEmpty { return cached }
         let instrument = try? await client.getInstrument(figi: figi)
         let meta = InstrumentMetaValue(
             figi: figi,
             ticker: instrument?.ticker ?? figi,
             name: instrument?.name ?? figi,
             sector: instrument?.sector ?? "",
-            currency: instrument?.currency ?? "rub"
+            currency: instrument?.currency ?? "rub",
+            logoName: instrument?.brand?.logoName ?? ""
         )
         await collector.add(meta)
         return meta

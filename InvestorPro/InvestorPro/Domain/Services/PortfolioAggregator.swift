@@ -81,7 +81,8 @@ struct PortfolioAggregator {
                         pnlPercent: existing.pnlPercent,
                         currency: existing.currency,
                         sector: existing.sector,
-                        issuer: existing.issuer
+                        issuer: existing.issuer,
+                        logoName: existing.logoName
                     )
                 } else {
                     merged[position.id] = position

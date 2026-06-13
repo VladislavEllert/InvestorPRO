@@ -8,6 +8,7 @@ struct InstrumentMetaValue: Sendable, Hashable {
     let name: String
     let sector: String
     let currency: String
+    let logoName: String
 }
 
 /// Cached instrument metadata. figi→meta changes rarely, so caching avoids a
@@ -19,6 +20,7 @@ final class InstrumentMeta {
     var name: String
     var sector: String
     var currency: String
+    var logoName: String = ""
     var updatedAt: Date
 
     init(value: InstrumentMetaValue) {
@@ -27,11 +29,13 @@ final class InstrumentMeta {
         self.name = value.name
         self.sector = value.sector
         self.currency = value.currency
+        self.logoName = value.logoName
         self.updatedAt = Date()
     }
 
     var value: InstrumentMetaValue {
-        InstrumentMetaValue(figi: figi, ticker: ticker, name: name, sector: sector, currency: currency)
+        InstrumentMetaValue(figi: figi, ticker: ticker, name: name,
+                            sector: sector, currency: currency, logoName: logoName)
     }
 }
 
