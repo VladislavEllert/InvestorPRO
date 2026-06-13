@@ -116,6 +116,9 @@ struct ChartsView: View {
     /// Only enable horizontal scrolling when there are enough points to overflow;
     /// otherwise let the chart auto-fit so the axis dates sit under the bars.
     private var isScrollable: Bool { buckets.count > 10 }
+    /// Narrow fixed bar(s) when there are only a few points, so a single snapshot
+    /// doesn't stretch into a full-width block.
+    private var barWidth: MarkDimension { buckets.count <= 3 ? .fixed(40) : .automatic }
 
     private var windowedRub: [PortfolioValuePoint] {
         guard let cutoff = period.cutoff else { return fullSeriesRub }
@@ -270,7 +273,8 @@ struct ChartsView: View {
                 case .columns:
                     BarMark(
                         x: .value("Дата", point.date, unit: period.bucket),
-                        y: .value("Стоимость", point.value)
+                        y: .value("Стоимость", point.value),
+                        width: barWidth
                     )
                     .foregroundStyle(
                         .linearGradient(colors: [Palette.blue, Palette.blue.opacity(0.45)],
@@ -312,7 +316,7 @@ struct ChartsView: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 5)) { _ in
+            AxisMarks(values: .automatic(desiredCount: buckets.count == 1 ? 1 : 5)) { _ in
                 AxisGridLine()
                 AxisValueLabel(
                     format: period == .month
