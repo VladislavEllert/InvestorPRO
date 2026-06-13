@@ -1,68 +1,30 @@
+import SwiftUI
 import UIKit
 
-/// Builds a simple PDF report (portfolio summary + holdings + recent trades) from
-/// real portfolio data. Returns a temp-file URL to share.
+/// Renders a SwiftUI report view into a multi-page PDF (A4), preserving the dark look.
 enum PDFReport {
-    static func build(portfolio: Portfolio, currency: Currency, converter: CurrencyConverter) -> URL? {
-        let bounds = CGRect(x: 0, y: 0, width: 595, height: 842) // A4 in points
-        let margin: CGFloat = 40
-        let maxY: CGFloat = 800
-        let renderer = UIGraphicsPDFRenderer(bounds: bounds)
+    @MainActor
+    static func render<Content: View>(_ content: Content) -> URL? {
+        let pageWidth: CGFloat = 595
+        let pageHeight: CGFloat = 842
+
+        let renderer = ImageRenderer(content: content.frame(width: pageWidth))
+        renderer.scale = 3
+        guard let image = renderer.uiImage else { return nil }
+
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("InvestorPro.pdf")
-
-        let title = UIFont.boldSystemFont(ofSize: 24)
-        let h2 = UIFont.boldSystemFont(ofSize: 15)
-        let body = UIFont.systemFont(ofSize: 11)
-
-        func money(_ rub: Double) -> String {
-            MoneyFormatter.string(converter.display(rub, in: currency), currency: currency)
-        }
+        let totalHeight = image.size.height
+        let pageCount = max(1, Int(ceil(totalHeight / pageHeight)))
+        let pdf = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
 
         do {
-            try renderer.writePDF(to: url) { ctx in
-                var y = margin
-                ctx.beginPage()
-
-                func draw(_ text: String, font: UIFont, color: UIColor = .label) {
-                    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color]
-                    let width = bounds.width - 2 * margin
-                    let height = (text as NSString).boundingRect(
-                        with: CGSize(width: width, height: .greatestFiniteMagnitude),
-                        options: [.usesLineFragmentOrigin], attributes: attrs, context: nil).height
-                    if y + height + 4 > maxY { ctx.beginPage(); y = margin }
-                    (text as NSString).draw(in: CGRect(x: margin, y: y, width: width, height: height),
-                                            withAttributes: attrs)
-                    y += height + 4
-                }
-                func spacer(_ h: CGFloat = 10) { y += h }
-
-                draw("InvestorPro", font: title)
-                draw("Отчёт от \(Date().formatted(date: .long, time: .shortened))", font: body, color: .secondaryLabel)
-                spacer()
-                draw("Стоимость портфеля: \(money(portfolio.totalRub))", font: h2)
-                spacer()
-
-                let breakdown = portfolio.breakdown(.assets)
-                draw("Срез по активам", font: h2)
-                for item in breakdown.sorted {
-                    draw("• \(item.name): \(money(item.amount))  (\(MoneyFormatter.percent(breakdown.share(of: item))))", font: body)
-                }
-                spacer()
-
-                draw("Позиции", font: h2)
-                for position in portfolio.positions.sorted(by: { $0.valueRub > $1.valueRub }) {
-                    let pnl = String(format: "%+.1f%%", position.pnlPercent)
-                    draw("• \(position.name) (\(position.ticker)): \(money(position.valueRub))  \(pnl)", font: body)
-                }
-                spacer()
-
-                if !portfolio.operations.isEmpty {
-                    draw("Последние операции", font: h2)
-                    for op in portfolio.operations.prefix(40) {
-                        let sign = op.payment >= 0 ? "+" : "−"
-                        let amount = MoneyFormatter.string(abs(op.payment), currency: .rub, fractionDigits: 2)
-                        draw("\(op.date.formatted(date: .numeric, time: .omitted))   \(op.type.title)   \(op.name)   \(sign)\(amount)", font: body)
-                    }
+            try pdf.writePDF(to: url) { ctx in
+                for page in 0..<pageCount {
+                    ctx.beginPage()
+                    UIColor(white: 0.05, alpha: 1).setFill()
+                    ctx.fill(CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
+                    let yOffset = -CGFloat(page) * pageHeight
+                    image.draw(in: CGRect(x: 0, y: yOffset, width: pageWidth, height: totalHeight))
                 }
             }
             return url
@@ -71,8 +33,6 @@ enum PDFReport {
         }
     }
 }
-
-import SwiftUI
 
 struct ActivityView: UIViewControllerRepresentable {
     let url: URL

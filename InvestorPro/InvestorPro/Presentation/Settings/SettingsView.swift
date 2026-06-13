@@ -6,6 +6,7 @@ struct SettingsView: View {
     @EnvironmentObject private var store: PortfolioStore
     @Environment(\.modelContext) private var modelContext
     @Query private var accounts: [AccountConfig]
+    @Query(sort: \PortfolioSnapshot.date) private var snapshots: [PortfolioSnapshot]
 
     @State private var exportFile: ExportFile?
 
@@ -49,9 +50,13 @@ struct SettingsView: View {
             Section("Отчёт") {
                 Button {
                     guard let portfolio = store.portfolio else { return }
-                    if let url = PDFReport.build(portfolio: portfolio,
-                                                 currency: settings.baseCurrency,
-                                                 converter: CurrencyConverter(usdRubRate: store.usdRubRate)) {
+                    let report = ReportView(
+                        portfolio: portfolio,
+                        snapshots: snapshots,
+                        currency: settings.baseCurrency,
+                        converter: CurrencyConverter(usdRubRate: store.usdRubRate)
+                    )
+                    if let url = PDFReport.render(report) {
                         exportFile = ExportFile(url: url)
                     }
                 } label: {
