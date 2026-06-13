@@ -198,6 +198,9 @@ struct HomeView: View {
             NavigationTile(title: "История сделок", systemImage: "list.bullet.rectangle.fill", color: Palette.purple) {
                 TradesView()
             }
+            NavigationTile(title: "По аккаунтам", systemImage: "person.2.fill", color: Palette.orange) {
+                AccountsPortfolioView()
+            }
         }
     }
 }

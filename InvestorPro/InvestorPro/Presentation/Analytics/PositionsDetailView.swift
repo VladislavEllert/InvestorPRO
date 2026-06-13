@@ -7,6 +7,7 @@ struct PositionsDetailView: View {
     @EnvironmentObject private var store: PortfolioStore
 
     let positions: [Position]
+    var title: String = "Подробнее"
 
     private var converter: CurrencyConverter { CurrencyConverter(usdRubRate: store.usdRubRate) }
 
@@ -38,7 +39,7 @@ struct PositionsDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Подробнее")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
