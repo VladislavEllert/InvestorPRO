@@ -109,8 +109,12 @@ struct ChartsView: View {
             : []
     }
 
-    /// Enough points in the current window to draw a chart and period stats.
-    private var hasChartData: Bool { buckets.count >= 2 }
+    /// At least one snapshot → we can draw (a single column). Builds up over time.
+    private var hasChartData: Bool { buckets.count >= 1 }
+    /// Two+ points needed to compute a change/return.
+    private var hasReturn: Bool { buckets.count >= 2 }
+    /// A line needs two points; with a single point fall back to a column.
+    private var effectiveStyle: ChartStyle { buckets.count < 2 ? .columns : style }
 
     private var windowedRub: [PortfolioValuePoint] {
         guard let cutoff = period.cutoff else { return fullSeriesRub }
@@ -190,7 +194,7 @@ struct ChartsView: View {
                 if let sel = selectedBucket {
                     Text(sel.date.formatted(.dateTime.day().month().year()))
                         .foregroundStyle(.secondary)
-                } else if hasChartData {
+                } else if hasReturn {
                     Text("\(sign)\(MoneyFormatter.string(abs(profit), currency: settings.baseCurrency))")
                         .foregroundStyle(color)
                     Text("(\(MoneyFormatter.percent(abs(pct))))")
@@ -218,13 +222,15 @@ struct ChartsView: View {
     private var styleAndChart: some View {
         if hasChartData {
             VStack(spacing: 8) {
-                HStack {
-                    Spacer()
-                    Picker("Вид", selection: $style) {
-                        ForEach(ChartStyle.allCases) { Image(systemName: $0.systemImage).tag($0) }
+                if hasReturn {
+                    HStack {
+                        Spacer()
+                        Picker("Вид", selection: $style) {
+                            ForEach(ChartStyle.allCases) { Image(systemName: $0.systemImage).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 96)
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 96)
                 }
                 chartCard
             }
@@ -259,7 +265,7 @@ struct ChartsView: View {
 
         return Chart {
             ForEach(buckets) { point in
-                switch style {
+                switch effectiveStyle {
                 case .columns:
                     BarMark(
                         x: .value("Дата", point.date, unit: period.bucket),
@@ -346,7 +352,8 @@ struct ChartsView: View {
             .reduce(0) { $0 + abs($1.payment) }
         // Доходность — та же величина, что и под суммой в шапке.
         return MovementStats(profitability: profitabilityRub, dividends: dividends,
-                             coupons: coupons, turnover: turnover, deposits: windowDeposits)
+                             coupons: coupons, turnover: turnover,
+                             deposits: windowDeposits, withdrawals: windowWithdrawals)
     }
 
     private var movementStats: some View {
@@ -358,7 +365,7 @@ struct ChartsView: View {
             }
             .padding(.bottom, 8)
 
-            if hasChartData {
+            if hasReturn {
                 statRow("Доходность", value: stats.profitability, signed: true)
             } else {
                 dashRow("Доходность")
@@ -371,6 +378,8 @@ struct ChartsView: View {
             statRow("Оборот", value: stats.turnover)
             Divider()
             statRow("Пополнения", value: stats.deposits)
+            Divider()
+            statRow("Вывод", value: stats.withdrawals)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

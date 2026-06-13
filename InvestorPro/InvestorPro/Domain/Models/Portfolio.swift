@@ -23,9 +23,11 @@ struct Portfolio {
             .filter { $0.type == .buy || $0.type == .sell }
             .reduce(0) { $0 + abs($1.payment) }
         let deposits = sum { $0.type == .input }
+        let withdrawals = operations.filter { $0.type == .output }.reduce(0) { $0 + abs($1.payment) }
         let profitability = positions.reduce(0) { $0 + $1.expectedYieldRub }
         return MovementStats(profitability: profitability, dividends: dividends,
-                             coupons: coupons, turnover: turnover, deposits: deposits)
+                             coupons: coupons, turnover: turnover,
+                             deposits: deposits, withdrawals: withdrawals)
     }
 
     /// Build a breakdown along one analytics dimension. The total always equals the

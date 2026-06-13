@@ -61,4 +61,5 @@ struct MovementStats {
     let coupons: Double
     let turnover: Double
     let deposits: Double
+    let withdrawals: Double
 }
