@@ -4,6 +4,8 @@
 
 **Личный трекер инвестиций для iPhone. Весь портфель — T-Invest и Bybit — в одном нативном приложении.**
 
+*Native iOS investment portfolio tracker (SwiftUI) for Tinkoff Invest & Bybit — assets, analytics, value & return charts, trade history. Stocks & crypto, personal finance, fully local on iPhone.*
+
 ![iOS](https://img.shields.io/badge/iOS-17%2B-000000?logo=apple&logoColor=white)
 ![Swift](https://img.shields.io/badge/Swift-5-F05138?logo=swift&logoColor=white)
 ![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-2396F3?logo=swift&logoColor=white)
@@ -95,3 +97,7 @@ xcodebuild -scheme InvestorPro -destination 'platform=iOS Simulator,name=iPhone 
 *Старый Telegram-бот на Python (`legacy_bot.py`) оставлен как референс бизнес-логики.*
 
 </div>
+
+---
+
+<sub><b>Keywords:</b> iOS investment tracker · investment portfolio tracker · stock tracker · crypto portfolio · personal finance app · fintech · money management · Tinkoff Invest API · T-Invest · Bybit API · trading · SwiftUI finance app · SwiftData · Swift Charts · CryptoKit HMAC · MVVM · clean architecture · iPhone portfolio app</sub>
