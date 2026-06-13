@@ -44,14 +44,15 @@ struct TInvestProvider: BrokerProvider {
         let client = TInvestClient(token: token)
         let to = Date()
         let from = Calendar.current.date(byAdding: .month, value: -monthsBack, to: to) ?? to
-        let iso = ISO8601DateFormatter()
         var operations: [Operation] = []
         guard let accounts = try? await client.getAccounts() else { return [] }
         for account in accounts {
             guard let raws = try? await client.getOperations(accountId: account.id, from: from, to: to) else { continue }
             for raw in raws {
+                // Skip operations whose date can't be parsed — never fall back to "now",
+                // that would dump the whole history into today.
+                guard let date = Self.parseDate(raw.date) else { continue }
                 let type = OperationType.from(raw.operationType ?? "")
-                let date = raw.date.flatMap { iso.date(from: $0) } ?? Date()
                 let name = raw.figi.flatMap { metaCache[$0]?.name } ?? type.title
                 operations.append(Operation(
                     id: raw.id ?? UUID().uuidString,
@@ -65,6 +66,23 @@ struct TInvestProvider: BrokerProvider {
             }
         }
         return operations
+    }
+
+    private static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let isoPlain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    /// T-Invest dates come as RFC3339, often with fractional seconds.
+    static func parseDate(_ string: String?) -> Date? {
+        guard let string, !string.isEmpty else { return nil }
+        return isoFractional.date(from: string) ?? isoPlain.date(from: string)
     }
 
     private func mapPosition(_ raw: TInvestClient.PortfolioPosition,
