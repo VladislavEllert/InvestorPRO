@@ -53,7 +53,7 @@ struct ReportView: View {
             HStack(alignment: .center, spacing: 12) {
                 DonutChartView(
                     slices: breakdown.donutSlices(),
-                    centerTitle: money(portfolio.totalRub),
+                    centerTitle: "\(MoneyFormatter.compact(converter.display(portfolio.totalRub, in: currency)))\u{00A0}\(currency.symbol)",
                     centerSubtitle: "\(breakdown.items.count) \(AnalyticsDimension.assets.countWord(breakdown.items.count))"
                 )
                 .frame(width: 200)
