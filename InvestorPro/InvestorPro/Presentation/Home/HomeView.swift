@@ -206,6 +206,9 @@ struct HomeView: View {
             NavigationTile(title: "По аккаунтам", systemImage: "person.2.fill", color: Palette.orange) {
                 AccountsPortfolioView()
             }
+            NavigationTile(title: "Будущие выплаты", systemImage: "calendar.badge.clock", color: Palette.positive) {
+                DividendsView()
+            }
         }
     }
 }

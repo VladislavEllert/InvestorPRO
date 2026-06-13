@@ -88,6 +88,40 @@ struct TInvestClient {
         return try JSONDecoder().decode(OperationsResponse.self, from: data).operations ?? []
     }
 
+    // MARK: Dividends & coupons (future payouts)
+
+    struct DividendDTO: Decodable {
+        let paymentDate: String?
+        let dividendNet: MoneyValue?
+    }
+    private struct DividendsResponse: Decodable { let dividends: [DividendDTO]? }
+
+    func getDividends(figi: String, from: Date, to: Date) async throws -> [DividendDTO] {
+        let iso = ISO8601DateFormatter()
+        let data = try await post("InstrumentsService/GetDividends", body: [
+            "figi": figi,
+            "from": iso.string(from: from),
+            "to": iso.string(from: to)
+        ])
+        return try JSONDecoder().decode(DividendsResponse.self, from: data).dividends ?? []
+    }
+
+    struct CouponDTO: Decodable {
+        let couponDate: String?
+        let payOneBond: MoneyValue?
+    }
+    private struct CouponsResponse: Decodable { let events: [CouponDTO]? }
+
+    func getBondCoupons(figi: String, from: Date, to: Date) async throws -> [CouponDTO] {
+        let iso = ISO8601DateFormatter()
+        let data = try await post("InstrumentsService/GetBondCoupons", body: [
+            "figi": figi,
+            "from": iso.string(from: from),
+            "to": iso.string(from: to)
+        ])
+        return try JSONDecoder().decode(CouponsResponse.self, from: data).events ?? []
+    }
+
     // MARK: Transport
 
     private func post(_ method: String, body: [String: Any]) async throws -> Data {
