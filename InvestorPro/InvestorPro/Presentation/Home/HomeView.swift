@@ -17,11 +17,16 @@ struct HomeView: View {
         return snapshots.last(where: { $0.date < startOfToday })?.totalRub
     }
 
-    /// Change since the previous day's close (nil until we have a prior snapshot).
+    /// Real change since the previous day's close, EXCLUDING today's deposits/withdrawals
+    /// (so adding money isn't shown as a gain). Nil until we have a prior snapshot.
     private var todayChange: Double? {
         guard let portfolio = store.portfolio, !portfolio.isEmpty,
               let prev = previousClose else { return nil }
-        return portfolio.totalRub - prev
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        let todayOps = portfolio.operations.filter { $0.date >= startOfToday }
+        let deposits = todayOps.filter { $0.type == .input }.reduce(0) { $0 + $1.payment }
+        let withdrawals = todayOps.filter { $0.type == .output }.reduce(0) { $0 + abs($1.payment) }
+        return (portfolio.totalRub - prev) - (deposits - withdrawals)
     }
 
     private var hasData: Bool {
