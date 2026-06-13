@@ -33,6 +33,12 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Безопасность") {
+                Toggle(isOn: $settings.requireBiometrics) {
+                    Label("Разблокировка по Face ID", systemImage: "faceid")
+                }
+            }
+
             Section("Заметки") {
                 // Notion token entry lands in plan step 7.
                 Label("Notion-интеграция", systemImage: "link")

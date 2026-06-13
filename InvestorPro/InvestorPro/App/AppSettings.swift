@@ -39,6 +39,10 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(refreshInterval.rawValue, forKey: Keys.refresh) }
     }
 
+    @Published var requireBiometrics: Bool {
+        didSet { defaults.set(requireBiometrics, forKey: Keys.biometrics) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -46,11 +50,13 @@ final class AppSettings: ObservableObject {
         self.theme = AppTheme(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .system
         self.baseCurrency = Currency(rawValue: defaults.string(forKey: Keys.currency) ?? "") ?? .rub
         self.refreshInterval = RefreshInterval(rawValue: defaults.string(forKey: Keys.refresh) ?? "") ?? .off
+        self.requireBiometrics = defaults.bool(forKey: Keys.biometrics)
     }
 
     private enum Keys {
         static let theme = "settings.theme"
         static let currency = "settings.baseCurrency"
         static let refresh = "settings.refreshInterval"
+        static let biometrics = "settings.requireBiometrics"
     }
 }

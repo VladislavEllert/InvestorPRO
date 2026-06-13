@@ -8,7 +8,7 @@ struct InvestorProApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            RootView()
                 .environmentObject(settings)
                 .environmentObject(portfolioStore)
                 .preferredColorScheme(settings.theme.colorScheme)
