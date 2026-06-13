@@ -1,7 +1,13 @@
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var store: PortfolioStore
+    @Environment(\.modelContext) private var modelContext
+    @Query private var accounts: [AccountConfig]
+
+    @State private var exportFile: ExportFile?
 
     var body: some View {
         Form {
@@ -27,10 +33,11 @@ struct SettingsView: View {
                     ForEach(AppSettings.RefreshInterval.allCases) { Text($0.title).tag($0) }
                 }
                 Button {
-                    // Manual refresh wired in plan step 3.
+                    Task { await store.refresh(accounts: accounts, context: modelContext) }
                 } label: {
                     Label("Обновить сейчас", systemImage: "arrow.clockwise")
                 }
+                .disabled(accounts.isEmpty || store.isLoading)
             }
 
             Section("Безопасность") {
@@ -39,17 +46,24 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Заметки") {
-                // Notion token entry lands in plan step 7.
-                Label("Notion-интеграция", systemImage: "link")
-                    .foregroundStyle(.secondary)
+            Section("Отчёт") {
+                Button {
+                    guard let portfolio = store.portfolio else { return }
+                    if let url = PDFReport.build(portfolio: portfolio,
+                                                 currency: settings.baseCurrency,
+                                                 converter: CurrencyConverter(usdRubRate: store.usdRubRate)) {
+                        exportFile = ExportFile(url: url)
+                    }
+                } label: {
+                    Label("Экспорт PDF", systemImage: "square.and.arrow.up")
+                }
+                .disabled(store.portfolio == nil)
             }
         }
         .navigationTitle("Настройки")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $exportFile) { file in
+            ActivityView(url: file.url)
+        }
     }
-}
-
-#Preview {
-    NavigationStack { SettingsView().environmentObject(AppSettings()) }
 }
