@@ -2,7 +2,7 @@
 
 # 📈 InvestorPro
 
-**Личный трекер инвестиций для iPhone. Весь портфель — T-Invest и Bybit — в одном нативном приложении.**
+**A personal investment tracker for iPhone. Your whole portfolio — Tinkoff Invest (T-Invest) and Bybit — in one native app.**
 
 *Native iOS investment portfolio tracker (SwiftUI) for Tinkoff Invest & Bybit — assets, analytics, value & return charts, trade history. Stocks & crypto, personal finance, fully local on iPhone.*
 
@@ -17,97 +17,91 @@
 
 ---
 
-## 💡 Зачем
+## 💡 Why
 
-Раньше портфель жил в Telegram-боте на Python: команды, текстовые сводки, поднятый сервер. Неудобно и несовременно. **InvestorPro** переносит и расширяет эту логику в нативное iOS-приложение: красиво, быстро, прямо в руке — и **без сервера**. Все запросы к биржам уходят прямо с телефона, данные хранятся локально.
+The portfolio used to live in a Python Telegram bot: commands, plain-text summaries, a server to keep alive. Clunky and dated. **InvestorPro** moves and extends that logic into a native iOS app: fast, good-looking, in your hand — and **serverless**. All exchange requests go straight from the phone; data stays on the device.
 
-Бизнес-логика (как тянуть данные T-Invest / Bybit, как считать PnL и доли) выверена в старом боте — он оставлен в репозитории как референс.
+## ✨ Features
 
-## ✨ Возможности
+- 🔑 **Accounts via API tokens** — multiple T-Invest accounts + Bybit. Tokens live only in the Keychain.
+- 🍩 **Home** — assets donut with the total in the centre, % breakdown, ₽/$ toggle, **today's change** and last-updated time.
+- 📊 **Analytics** — four breakdowns: **Assets / Companies / Sectors / Currency** (donut + legend), 1:1 with the Tinkoff style. Margin debt is shown as its own line.
+- 🏷 **Positions with logos** — official company logos from T-Invest, name, quantity · average price, value, PnL ₽·%. "Details" drill-down.
+- 👥 **By account** — each account separately → its positions.
+- 📈 **Charts** — portfolio value over time from real snapshots: **columns ⇄ curve**, ranges Month / 6M / Year / All time, scroll, scrubbing. Nothing is fabricated.
+- 💸 **Cash-flow stats** — return, dividends, coupons, turnover, deposits, withdrawals for the selected period.
+- 🗓 **Upcoming payouts** — declared dividends and coupons a year ahead: total, monthly bar chart, list by date.
+- 🧾 **Trade history** — operations by date, filter by account/type, tap → details (account, date, amount).
+- 🔐 **Face ID / passcode** lock (optional).
+- 📄 **PDF export** — a dark report of the portfolio and operations.
+- 🌗 **Themes** light / dark / system · 🔄 **refresh** manual / hourly / daily.
 
-- 🔑 **Аккаунты по API-токенам** — несколько счетов T-Invest + Bybit. Токены только в Keychain.
-- 🍩 **Главная** — donut активов, сумма в центре, разбивка по %, переключатель ₽/$, **изменение за сегодня** и время обновления.
-- 📊 **Аналитика** — четыре среза: **Активы / Компании / Отрасли / Валюта** (donut + легенда), 1:1 со стилем Т-Банка. Маржинальный долг учитывается отдельной строкой.
-- 🏷 **Позиции с логотипами** — официальные лого компаний из T-Invest, имя, кол-во · ср.цена, стоимость, PnL ₽·%. Кнопка «Подробнее».
-- 👥 **По аккаунтам** — каждый счёт отдельно → его позиции.
-- 📈 **Графики** — стоимость портфеля во времени из реальных снимков: **колонки ⇄ кривая**, периоды Месяц / Полгода / Год / Всё время, скролл, скраббинг. Ничего не выдумывается.
-- 💸 **Статистика движения средств** — доходность, дивиденды, купоны, оборот, пополнения, вывод за выбранный период.
-- 🗓 **Будущие выплаты** — объявленные дивиденды и купоны на год вперёд: сумма, бар по месяцам, список по датам.
-- 🧾 **История сделок** — операции по датам, фильтр по аккаунту/типу, тап → детали (аккаунт, дата, сумма).
-- 🔐 **Face ID / код** на вход (опционально).
-- 📄 **Экспорт PDF** — отчёт по портфелю и операциям.
-- 🌗 **Темы** light / dark / system · 🔄 **обновление** вручную / час / день.
+## 📸 Screenshots
 
-## 🏗 Архитектура
+> Demo GIF and screenshots — coming soon.
 
-Чистая архитектура, MVVM, зависимости направлены к Domain. Только системные фреймворки — никаких сторонних SDK.
+## 🏗 Architecture
+
+Clean architecture, MVVM, dependencies pointing toward Domain. System frameworks only — no third-party SDKs.
 
 ```
 InvestorPro/InvestorPro/
-├── App/            точка входа, AppSettings (тема/валюта/частота)
-├── Domain/         модели + протоколы (без UIKit/сети)
+├── App/            entry point, AppSettings (theme/currency/refresh)
+├── Domain/         models + protocols (no UIKit/networking)
 │   ├── Models/     Account, Position, AssetClass, Portfolio, Operation, Snapshot…
-│   ├── Providers/  BrokerProvider (OCP: новый брокер = новый класс)
+│   ├── Providers/  BrokerProvider (OCP: new broker = new class)
 │   └── Services/   PortfolioAggregator, PortfolioStore
 ├── Data/
 │   ├── Network/    TInvestClient, BybitClient, CBRClient
-│   ├── Security/   KeychainStore (секреты)
-│   └── Persistence (SwiftData: снимки, кэш инструментов, аккаунты)
+│   ├── Security/   KeychainStore (secrets)
+│   └── Persistence (SwiftData: snapshots, instrument cache, accounts)
 └── Presentation/   Home, Analytics, Accounts, Charts, Trades, Dividends, Export, Settings, Components, Theme
 ```
 
-**Принципы:** SOLID · DRY · KISS · минимум зависимостей · секреты только в Keychain.
+**Principles:** SOLID · DRY · KISS · minimal dependencies · secrets only in the Keychain.
 
-## 🧰 Технологии
+## 🧰 Tech
 
 `SwiftUI` · `Swift Charts` · `SwiftData` · `URLSession (async/await)` · `CryptoKit (HMAC)` · `Keychain` · `LocalAuthentication (Face ID)` · `PDFKit`
 
-## 🔌 Источники данных
+## 🔌 Data sources
 
-| Источник | Что | Авторизация |
+| Source | What | Auth |
 |---|---|---|
-| **T-Invest** | счета, портфель, инструменты, операции, дивиденды, купоны, логотипы | Bearer-токен (read-only) |
-| **Bybit v5** | баланс Unified-аккаунта | API key + secret, HMAC-SHA256 |
-| **ЦБ РФ** | курс USD/RUB | публичный XML |
+| **T-Invest** | accounts, portfolio, instruments, operations, dividends, coupons, logos | Bearer token (read-only) |
+| **Bybit v5** | Unified account balance | API key + secret, HMAC-SHA256 |
+| **Bank of Russia** | USD/RUB rate | public XML |
 
-> История стоимости портфеля копится локально (снимок при каждом обновлении) — графики растут со временем работы приложения.
+> Portfolio value history is accumulated locally (a snapshot on every refresh) — the charts grow over time as the app is used. The exchanges don't expose a ready-made value time series, so nothing is invented: history starts from first launch.
 
-## 🚀 Сборка и запуск
+## 🚀 Build & run
 
 ```bash
 cd InvestorPro
 xcodebuild -scheme InvestorPro -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
-**На устройство (iPhone):** открыть `InvestorPro/InvestorPro.xcodeproj` в Xcode → выбрать Team (личный Apple ID) → Run. Бесплатная подпись живёт ~7 дней.
+**On a device (iPhone):** open `InvestorPro/InvestorPro.xcodeproj` in Xcode → pick a Team (personal Apple ID) → Run. Free signing lasts ~7 days.
 
-**Подключить свои счета:** Настройки → Аккаунты → `+` → токен(ы). Pull-to-refresh подтянет портфель.
+**Connect your accounts:** Settings → Accounts → `+` → token(s). Pull-to-refresh loads the portfolio.
 
 ## 🗺 Roadmap
 
-Требуют платного Apple Developer (бесплатная подпись не поддерживает CloudKit / App Groups):
+Require a paid Apple Developer account (free signing doesn't support CloudKit / App Groups):
 
-- [ ] iCloud-синхронизация снимков (история графика между устройствами)
-- [ ] Виджет на домашний экран (сумма + спарклайн)
-- [ ] Настоящее фоновое обновление (`BGAppRefreshTask`)
+- [ ] iCloud snapshot sync (chart history across devices)
+- [ ] Home-screen widget (total + sparkline)
+- [ ] Real background refresh (`BGAppRefreshTask`)
 
-Прочее:
+Other:
 
-- [ ] AI-ассистент по портфелю (ProxyAPI: анализ, советы, мультичаты)
-- [ ] Заметки с импортом/экспортом в Notion
-- [ ] Bybit детальнее (фьючерсы, фандинг)
+- [ ] AI portfolio assistant (ProxyAPI: analysis, advice, multi-chat)
+- [ ] Notes with Notion import/export
+- [ ] Bybit detail (futures, funding)
 
-## ⚠️ Дисклеймер
+## ⚠️ Disclaimer
 
-Личный pet-проект, не публикуется в App Store. Не является инвестиционной рекомендацией. API-токены используются только для чтения, хранятся в Keychain устройства и никуда, кроме API бирж, не отправляются.
-
----
-
-<div align="center">
-
-*Старый Telegram-бот на Python (`legacy_bot.py`) оставлен как референс бизнес-логики.*
-
-</div>
+A personal pet project, not published on the App Store. Not investment advice. API tokens are read-only, stored in the device Keychain, and never sent anywhere except the exchange APIs.
 
 ---
 
