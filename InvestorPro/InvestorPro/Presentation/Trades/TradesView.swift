@@ -16,7 +16,13 @@ struct TradesView: View {
         List {
             ForEach(grouped, id: \.day) { section in
                 Section(section.day.formatted(.dateTime.day().month(.wide).year())) {
-                    ForEach(section.items) { OperationRow(operation: $0) }
+                    ForEach(section.items) { operation in
+                        NavigationLink {
+                            OperationDetailView(operation: operation)
+                        } label: {
+                            OperationRow(operation: operation)
+                        }
+                    }
                 }
             }
         }
@@ -74,6 +80,54 @@ private struct OperationRow: View {
         case .sell, .dividend, .coupon, .input: return Palette.positive
         default: return .secondary
         }
+    }
+}
+
+struct OperationDetailView: View {
+    let operation: Operation
+
+    var body: some View {
+        List {
+            Section {
+                detailRow("Тип", operation.type.title)
+                detailRow("Инструмент", operation.name)
+                detailRow("Аккаунт", operation.accountLabel)
+                detailRow("Дата", operation.date.formatted(.dateTime.day().month(.wide).year().hour().minute()))
+            }
+            Section {
+                HStack {
+                    Text("Сумма").foregroundStyle(.secondary)
+                    Spacer()
+                    Text(amountString)
+                        .foregroundStyle(operation.payment >= 0 ? Palette.positive : .primary)
+                }
+                if operation.quantity > 0 {
+                    detailRow("Количество", "\(qtyString) шт.")
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .navigationTitle(operation.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func detailRow(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title).foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            Text(value).multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var amountString: String {
+        let sign = operation.payment >= 0 ? "+" : "−"
+        return "\(sign)\(MoneyFormatter.string(abs(operation.payment), currency: .rub, fractionDigits: 2))"
+    }
+
+    private var qtyString: String {
+        operation.quantity == operation.quantity.rounded()
+            ? String(Int(operation.quantity))
+            : String(format: "%g", operation.quantity)
     }
 }
 

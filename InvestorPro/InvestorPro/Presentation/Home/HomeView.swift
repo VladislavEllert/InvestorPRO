@@ -51,15 +51,24 @@ struct HomeView: View {
                 }
             }
             .refreshable { await store.refresh(accounts: accounts, context: modelContext) }
-            .task { await store.refresh(accounts: accounts, context: modelContext) }
+            .task { await autoRefreshIfNeeded() }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await autoRefreshIfNeeded() } }
             }
         }
     }
 
+    /// Refresh once on first load, then only on the configured interval — NOT on every
+    /// screen change. Manual button and pull-to-refresh always force a refresh.
     private func autoRefreshIfNeeded() async {
-        guard let interval = settings.refreshInterval.seconds, !accounts.isEmpty else { return }
+        guard !accounts.isEmpty else { return }
+        // First load — always fetch once.
+        if store.portfolio == nil {
+            await store.refresh(accounts: accounts, context: modelContext)
+            return
+        }
+        // Otherwise respect the chosen interval (manual → never auto).
+        guard let interval = settings.refreshInterval.seconds else { return }
         if let last = store.lastUpdated, Date().timeIntervalSince(last) < interval { return }
         await store.refresh(accounts: accounts, context: modelContext)
     }
