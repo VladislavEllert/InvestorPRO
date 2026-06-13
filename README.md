@@ -92,6 +92,6 @@ xcodebuild -scheme InvestorPro -destination 'platform=iOS Simulator,name=iPhone 
 
 <div align="center">
 
-*Старый Telegram-бот на Python (`*.py` в корне) оставлен как референс бизнес-логики.*
+*Старый Telegram-бот на Python (`legacy_bot.py`) оставлен как референс бизнес-логики.*
 
 </div>
