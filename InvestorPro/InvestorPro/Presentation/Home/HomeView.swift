@@ -7,8 +7,22 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @Query private var accounts: [AccountConfig]
+    @Query(sort: \PortfolioSnapshot.date) private var snapshots: [PortfolioSnapshot]
 
     private var converter: CurrencyConverter { CurrencyConverter(usdRubRate: store.usdRubRate) }
+
+    /// Most recent snapshot recorded before today — yesterday's close.
+    private var previousClose: Double? {
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        return snapshots.last(where: { $0.date < startOfToday })?.totalRub
+    }
+
+    /// Change since the previous day's close (nil until we have a prior snapshot).
+    private var todayChange: Double? {
+        guard let portfolio = store.portfolio, !portfolio.isEmpty,
+              let prev = previousClose else { return nil }
+        return portfolio.totalRub - prev
+    }
 
     private var hasData: Bool {
         if let portfolio = store.portfolio { return !portfolio.isEmpty }
@@ -23,6 +37,7 @@ struct HomeView: View {
                         currencyToggle
                         let breakdown = store.portfolio!.breakdown(.assets)
                         donutCard(breakdown)
+                        statusRow
                         legend(breakdown)
                         tiles
                     } else {
@@ -119,6 +134,30 @@ struct HomeView: View {
             }
         }
         .pickerStyle(.segmented)
+    }
+
+    private var statusRow: some View {
+        HStack {
+            if let change = todayChange, let prev = previousClose {
+                let display = converter.display(change, in: settings.baseCurrency)
+                let pct = prev > 0 ? change / prev * 100 : 0
+                let color: Color = change >= 0 ? Palette.positive : Palette.negative
+                let sign = change >= 0 ? "+" : "−"
+                HStack(spacing: 6) {
+                    Text("Сегодня").foregroundStyle(.secondary)
+                    Text("\(sign)\(MoneyFormatter.string(abs(display), currency: settings.baseCurrency)) (\(MoneyFormatter.percent(abs(pct))))")
+                        .foregroundStyle(color)
+                }
+                .font(.subheadline)
+            }
+            Spacer()
+            if let last = store.lastUpdated {
+                Text("обновлено \(last.formatted(date: .omitted, time: .shortened))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func donutCard(_ breakdown: PortfolioBreakdown) -> some View {
