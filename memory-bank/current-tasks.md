@@ -57,6 +57,13 @@
 - [x] PDF-экспорт: PDFReport (UIGraphicsPDFRenderer) + ActivityView, Настройки→Отчёт.
       Заодно: починена мёртвая кнопка «Обновить сейчас», убрана Notion-заглушка.
 
+- [x] Локаль ru_RU на весь app (даты/месяцы по-русски).
+- [x] Логотипы инструментов: T-Invest brand-CDN (invest-brands.cdn-tinkoff.ru) по logoName из
+      GetInstrumentBy.brand, кэш в InstrumentMeta (re-fetch если logo пустой). InstrumentLogo
+      (AsyncImage + фолбэк-инициалы). Строки позиций переверстаны как в Т-Банке (лого/имя/кол-во·ср.цена/стоимость/PnL ₽·%).
+- [x] Honest-фиксы: единый net-total везде (маржа отдельной строкой), графики только из реальных
+      снимков (1 снимок = 1 колонка, прижата влево), статистика из реальных операций, демо-данных нет.
+
 ## Заблокировано (бесплатный Apple ID / нужен ввод)
 - iCloud-синк (#15): CloudKit = платный Developer + запрещает @Attribute(.unique)
   (AccountConfig/InstrumentMeta). Не делаем до платного аккаунта.
