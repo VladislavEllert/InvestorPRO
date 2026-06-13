@@ -79,8 +79,8 @@ struct DividendsView: View {
                     .cornerRadius(3)
                 }
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .month)) { _ in
-                        AxisValueLabel(format: .dateTime.month(.narrow)).font(.caption2)
+                    AxisMarks(values: .automatic(desiredCount: 6)) { _ in
+                        AxisValueLabel(format: .dateTime.month(.abbreviated)).font(.caption2)
                     }
                 }
                 .frame(height: 180)

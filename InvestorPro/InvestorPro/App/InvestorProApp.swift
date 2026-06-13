@@ -13,6 +13,7 @@ struct InvestorProApp: App {
                 .environmentObject(portfolioStore)
                 .preferredColorScheme(settings.theme.colorScheme)
                 .tint(Palette.accent)
+                .environment(\.locale, Locale(identifier: "ru_RU"))
         }
         .modelContainer(for: AppSchema.models)
     }
