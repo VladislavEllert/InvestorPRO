@@ -7,6 +7,12 @@ struct TInvestClient {
     private let base = URL(string: "https://invest-public-api.tinkoff.ru/rest/")!
     private let service = "tinkoff.public.invest.api.contract.v1."
 
+    /// Session trusting the Russian Trusted Root CA for the T-Invest host
+    /// (its certificate chain is not in the iOS system trust store).
+    private static let session = URLSession(configuration: .default,
+                                            delegate: RussianTrustDelegate(),
+                                            delegateQueue: nil)
+
     init(token: String) { self.token = token }
 
     // MARK: Money helpers
@@ -134,7 +140,7 @@ struct TInvestClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw NetworkError.invalidResponse }
         guard (200..<300).contains(http.statusCode) else {
             throw NetworkError.http(status: http.statusCode,
