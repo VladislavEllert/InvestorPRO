@@ -58,7 +58,7 @@ struct BybitClient {
 
         let decoded = try JSONDecoder().decode(WalletResponse.self, from: data)
         guard decoded.retCode == 0 else {
-            throw NetworkError.http(status: decoded.retCode, body: decoded.retMsg)
+            throw BybitError(code: decoded.retCode, message: decoded.retMsg)
         }
 
         let coins = decoded.result?.list?.first?.coin ?? []
@@ -66,6 +66,30 @@ struct BybitClient {
             let usd = Double(dto.usdValue ?? "0") ?? 0
             guard usd >= 0.01 else { return nil }
             return Coin(coin: dto.coin, equity: Double(dto.equity ?? "0") ?? 0, usdValue: usd)
+        }
+    }
+
+    /// Bybit answers HTTP 200 with a non-zero `retCode`; translate the codes a
+    /// user can actually act on (expired/wrong keys, IP whitelist).
+    struct BybitError: LocalizedError {
+        let code: Int
+        let message: String
+
+        var errorDescription: String? {
+            switch code {
+            case 10003, 33004:
+                return "API-ключ недействителен или истёк — задайте новый в настройках аккаунта."
+            case 10004:
+                return "Неверная подпись — проверьте API Secret."
+            case 10005:
+                return "У ключа нет прав на чтение кошелька."
+            case 10010:
+                return "IP не в белом списке ключа. Разрешите ключу любой IP или снимите ограничение."
+            case 10016, 10018:
+                return "Bybit временно недоступен или лимит запросов. Повторите позже."
+            default:
+                return "Bybit \(code): \(message)"
+            }
         }
     }
 
